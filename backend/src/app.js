@@ -1,0 +1,44 @@
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
+import { env } from './config/env.js';
+import { notFound, errorHandler } from './middleware/errorHandler.js';
+import { authenticate } from './middleware/auth.js';
+import authRoutes from './modules/auth/auth.routes.js';
+import dashboardRoutes from './modules/dashboard/dashboard.routes.js';
+import productRoutes from './modules/products/products.routes.js';
+import customerRoutes from './modules/customers/customers.routes.js';
+import billingRoutes from './modules/billing/billing.routes.js';
+import salesRoutes from './modules/sales/sales.routes.js';
+import inventoryRoutes from './modules/inventory/inventory.routes.js';
+import purchaseRoutes from './modules/purchases/purchases.routes.js';
+import financeRoutes from './modules/finance/finance.routes.js';
+import reportRoutes from './modules/reports/reports.routes.js';
+import notificationRoutes from './modules/notifications/notifications.routes.js';
+import aiRoutes from './modules/ai/ai.routes.js';
+
+export const app = express();
+app.use(helmet());
+app.use(cors({ origin: env.frontendUrl, credentials: true }));
+app.use(express.json({ limit: '5mb' }));
+app.use(morgan('dev'));
+app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 300 }));
+
+app.get('/api/health', (req, res) => res.json({ success: true, service: env.businessName, location: env.businessLocation }));
+app.use('/api/auth', authRoutes);
+app.use('/api/dashboard', authenticate, dashboardRoutes);
+app.use('/api/products', authenticate, productRoutes);
+app.use('/api/customers', authenticate, customerRoutes);
+app.use('/api/billing', authenticate, billingRoutes);
+app.use('/api/sales', authenticate, salesRoutes);
+app.use('/api/inventory', authenticate, inventoryRoutes);
+app.use('/api/purchases', authenticate, purchaseRoutes);
+app.use('/api/finance', authenticate, financeRoutes);
+app.use('/api/reports', authenticate, reportRoutes);
+app.use('/api/notifications', authenticate, notificationRoutes);
+app.use('/api/ai', authenticate, aiRoutes);
+
+app.use(notFound);
+app.use(errorHandler);

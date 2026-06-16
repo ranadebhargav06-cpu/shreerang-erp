@@ -1,0 +1,10 @@
+import { Router } from 'express';
+import { salesReport, productReport, customerReport, inventoryReport, profitReport, exportCsv } from './reports.controller.js';
+const router = Router();
+router.get('/sales', salesReport);
+router.get('/products', productReport);
+router.get('/customers', customerReport);
+router.get('/inventory', inventoryReport);
+router.get('/profit', profitReport);
+router.get('/export.csv', exportCsv);
+export default router;

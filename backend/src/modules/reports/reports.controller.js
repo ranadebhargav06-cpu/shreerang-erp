@@ -1,0 +1,10 @@
+import { prisma } from '../../config/db.js';
+import { asyncHandler } from '../../utils/asyncHandler.js';
+import { ok } from '../../utils/apiResponse.js';
+const n=(v)=>Number(v||0);
+export const salesReport = asyncHandler(async (req,res)=> ok(res, await prisma.sale.findMany({ include:{ customer:true, items:true }, orderBy:{ saleDate:'desc' } })));
+export const productReport = asyncHandler(async (req,res)=> ok(res, (await prisma.product.findMany({ include:{ saleItems:true } })).map(p=>({ name:p.name, sku:p.sku, sold:p.saleItems.reduce((s,i)=>s+n(i.quantity),0), revenue:p.saleItems.reduce((s,i)=>s+n(i.lineTotal),0) }))));
+export const customerReport = asyncHandler(async (req,res)=> ok(res, await prisma.customer.findMany({ include:{ sales:true, payments:true } })));
+export const inventoryReport = asyncHandler(async (req,res)=> ok(res, { rawMaterials: await prisma.rawMaterial.findMany(), batches: await prisma.productBatch.findMany({ include:{ product:true } }) }));
+export const profitReport = asyncHandler(async (req,res)=>{ const [sales,expenses]=await Promise.all([prisma.sale.findMany(),prisma.expense.findMany()]); ok(res,{ revenue:sales.reduce((s,x)=>s+n(x.total),0), expenses:expenses.reduce((s,x)=>s+n(x.amount),0) }); });
+export const exportCsv = asyncHandler(async (req,res)=>{ const rows=await prisma.sale.findMany({ include:{ customer:true } }); res.setHeader('Content-Type','text/csv'); res.setHeader('Content-Disposition','attachment; filename="sales-report.csv"'); res.send(['Sale No,Customer,Date,Total,Paid',...rows.map(r=>`${r.saleNumber},${r.customer?.name||'Walk-in'},${r.saleDate.toISOString()},${r.total},${r.paidAmount}`)].join('\n')); });

@@ -1,0 +1,12 @@
+import React, { useEffect, useState } from 'react';
+import { api, apiBase } from '../services/api';
+const configs = {
+  products:{ endpoint:'/products', title:'Product Management', text:'Add/edit papad products, categories, pricing, images, stock and batch tracking.', columns:['name','sku','unit','priceRetail','priceWholesale','active'] },
+  customers:{ endpoint:'/customers', title:'Customer Management', text:'Customer database with contact, GST, address, credit and payment history.', columns:['name','phone','gstNumber','outstanding'] },
+  sales:{ endpoint:'/sales', title:'Sales Management', text:'Retail, wholesale, daily entries, monthly and customer-wise sales tracking.', columns:['saleNumber','saleType','total','paidAmount','saleDate'] },
+  billing:{ endpoint:'/billing/invoices', title:'GST Billing', text:'Invoice generation, printing-ready data, PDF export integration and WhatsApp sharing links.', columns:['invoiceNumber','status','subtotal','cgst','sgst','total'] },
+  inventory:{ endpoint:'/inventory/raw-materials', title:'Inventory Management', text:'Raw material stock, finished goods batch stock, low-stock alerts and movements.', columns:['name','unit','currentStock','reorderLevel'] },
+  purchases:{ endpoint:'/purchases', title:'Purchase Management', text:'Suppliers, purchase orders, raw material purchases and expense tracking.', columns:['poNumber','subtotal','taxAmount','total','status'] },
+  notifications:{ endpoint:'/notifications', title:'Notification System', text:'Low stock alerts, pending payment reminders and order updates.', columns:['title','message','type','read'] }
+};
+export default function ModulePage({ type }){ const cfg=configs[type]; const [rows,setRows]=useState([]); const [error,setError]=useState(''); useEffect(()=>{api(cfg.endpoint).then(setRows).catch(e=>setError(e.message))},[type]); return <div className="card"><h2>{cfg.title}</h2><p className="muted">{cfg.text}</p><div className="actions"><button onClick={()=>window.print()}>Print</button>{type==='billing'&&<a className="btn secondary" href={`${apiBase}/reports/export.csv`}>Export CSV</a>}</div>{error&&<p className="error">{error}</p>}<table className="table"><thead><tr>{cfg.columns.map(c=><th key={c}>{c}</th>)}</tr></thead><tbody>{rows.map((r,i)=><tr key={r.id||i}>{cfg.columns.map(c=><td key={c}>{String(r[c]??'')}</td>)}</tr>)}</tbody></table><p className="muted">CRUD forms are intentionally isolated per module; extend this page or create a dedicated form without changing other modules.</p></div> }

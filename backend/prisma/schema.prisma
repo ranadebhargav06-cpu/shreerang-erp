@@ -1,0 +1,307 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  SALES
+  INVENTORY
+  ACCOUNTANT
+  EMPLOYEE
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PAID
+  PARTIAL
+  CANCELLED
+  RETURNED
+}
+
+enum StockMovementType {
+  RAW_PURCHASE
+  PRODUCTION_IN
+  SALE_OUT
+  RETURN_IN
+  ADJUSTMENT
+  DAMAGE
+}
+
+enum PaymentMode {
+  CASH
+  UPI
+  BANK_TRANSFER
+  CHEQUE
+  CREDIT
+}
+
+model User {
+  id                 String    @id @default(cuid())
+  name               String
+  email              String    @unique
+  phone              String?
+  passwordHash       String
+  role               Role      @default(EMPLOYEE)
+  active             Boolean   @default(true)
+  resetTokenHash     String?
+  resetTokenExpires  DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  sales              Sale[]
+}
+
+model ProductCategory {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Product {
+  id             String          @id @default(cuid())
+  categoryId     String?
+  category       ProductCategory? @relation(fields: [categoryId], references: [id])
+  name           String
+  sku            String          @unique
+  description    String?
+  priceRetail    Decimal
+  priceWholesale Decimal
+  gstRate        Decimal         @default(5)
+  unit           String          @default("packet")
+  imageUrl       String?
+  active         Boolean         @default(true)
+  batches        ProductBatch[]
+  invoiceItems   InvoiceItem[]
+  saleItems      SaleItem[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model ProductBatch {
+  id           String   @id @default(cuid())
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id])
+  batchNumber  String
+  mfgDate      DateTime?
+  expiryDate   DateTime?
+  quantity     Decimal  @default(0)
+  costPerUnit   Decimal  @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  @@unique([productId, batchNumber])
+}
+
+model Customer {
+  id              String       @id @default(cuid())
+  name            String
+  contactPerson   String?
+  phone           String
+  email           String?
+  gstNumber       String?
+  creditLimit     Decimal      @default(0)
+  outstanding     Decimal      @default(0)
+  notes           String?
+  addresses       Address[]
+  invoices        Invoice[]
+  sales           Sale[]
+  payments        Payment[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+}
+
+model Address {
+  id          String   @id @default(cuid())
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id])
+  line1       String
+  line2       String?
+  city        String
+  district    String?
+  state       String
+  pincode     String
+  type        String   @default("billing")
+}
+
+model Supplier {
+  id        String     @id @default(cuid())
+  name      String
+  phone     String
+  email     String?
+  gstNumber String?
+  address   String?
+  purchases Purchase[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Sale {
+  id          String      @id @default(cuid())
+  saleNumber  String      @unique
+  customerId  String?
+  customer    Customer?   @relation(fields: [customerId], references: [id])
+  userId      String?
+  user        User?       @relation(fields: [userId], references: [id])
+  saleType    String      @default("RETAIL")
+  subtotal    Decimal
+  taxAmount   Decimal
+  discount    Decimal     @default(0)
+  total       Decimal
+  paidAmount  Decimal     @default(0)
+  paymentMode PaymentMode @default(CASH)
+  saleDate    DateTime    @default(now())
+  items       SaleItem[]
+  invoice     Invoice?
+  returns     SalesReturn[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model SaleItem {
+  id        String  @id @default(cuid())
+  saleId    String
+  sale      Sale    @relation(fields: [saleId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  batchNo   String?
+  quantity  Decimal
+  unitPrice Decimal
+  gstRate   Decimal @default(5)
+  lineTotal Decimal
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  invoiceNumber String        @unique
+  saleId        String        @unique
+  sale          Sale          @relation(fields: [saleId], references: [id])
+  customerId    String?
+  customer      Customer?     @relation(fields: [customerId], references: [id])
+  status        InvoiceStatus @default(ISSUED)
+  subtotal      Decimal
+  cgst          Decimal       @default(0)
+  sgst          Decimal       @default(0)
+  igst          Decimal       @default(0)
+  total         Decimal
+  pdfUrl        String?
+  issuedAt      DateTime      @default(now())
+  dueDate       DateTime?
+  items         InvoiceItem[]
+  payments      Payment[]
+}
+
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice @relation(fields: [invoiceId], references: [id])
+  productId   String
+  product     Product @relation(fields: [productId], references: [id])
+  description String
+  hsnCode     String?
+  quantity    Decimal
+  unitPrice   Decimal
+  gstRate     Decimal
+  total       Decimal
+}
+
+model Payment {
+  id          String      @id @default(cuid())
+  customerId  String?
+  customer    Customer?   @relation(fields: [customerId], references: [id])
+  invoiceId   String?
+  invoice     Invoice?    @relation(fields: [invoiceId], references: [id])
+  amount      Decimal
+  mode        PaymentMode
+  reference   String?
+  paidAt      DateTime    @default(now())
+  notes       String?
+}
+
+model SalesReturn {
+  id        String   @id @default(cuid())
+  saleId    String
+  sale      Sale     @relation(fields: [saleId], references: [id])
+  reason    String
+  amount    Decimal
+  returnedAt DateTime @default(now())
+}
+
+model RawMaterial {
+  id            String          @id @default(cuid())
+  name          String          @unique
+  unit          String
+  currentStock  Decimal         @default(0)
+  reorderLevel  Decimal         @default(0)
+  movements     StockMovement[]
+  purchaseItems PurchaseItem[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+model StockMovement {
+  id            String            @id @default(cuid())
+  rawMaterialId String?
+  rawMaterial   RawMaterial?      @relation(fields: [rawMaterialId], references: [id])
+  productId     String?
+  type          StockMovementType
+  quantity      Decimal
+  reference     String?
+  notes         String?
+  movedAt       DateTime          @default(now())
+}
+
+model Purchase {
+  id            String         @id @default(cuid())
+  poNumber      String         @unique
+  supplierId    String
+  supplier      Supplier       @relation(fields: [supplierId], references: [id])
+  subtotal      Decimal
+  taxAmount     Decimal        @default(0)
+  total         Decimal
+  purchaseDate  DateTime       @default(now())
+  status        String         @default("RECEIVED")
+  items         PurchaseItem[]
+  expenses      Expense[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model PurchaseItem {
+  id            String       @id @default(cuid())
+  purchaseId    String
+  purchase      Purchase     @relation(fields: [purchaseId], references: [id])
+  rawMaterialId String
+  rawMaterial   RawMaterial  @relation(fields: [rawMaterialId], references: [id])
+  quantity      Decimal
+  unitCost      Decimal
+  total         Decimal
+}
+
+model Expense {
+  id          String    @id @default(cuid())
+  purchaseId  String?
+  purchase    Purchase? @relation(fields: [purchaseId], references: [id])
+  category    String
+  description String
+  amount      Decimal
+  expenseDate DateTime  @default(now())
+  paidBy      PaymentMode @default(CASH)
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  type      String
+  read      Boolean  @default(false)
+  metadata  String?
+  createdAt DateTime @default(now())
+}

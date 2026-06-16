@@ -1,0 +1,12 @@
+import { Router } from 'express';
+import { authorize } from '../../middleware/auth.js';
+import { createCustomer, deleteCustomer, listCustomers, updateCustomer, getCustomer, addAddress, addPayment } from './customers.controller.js';
+const router = Router();
+router.get('/', listCustomers);
+router.get('/:id', getCustomer);
+router.post('/', authorize('ADMIN','MANAGER','SALES'), createCustomer);
+router.put('/:id', authorize('ADMIN','MANAGER','SALES'), updateCustomer);
+router.delete('/:id', authorize('ADMIN'), deleteCustomer);
+router.post('/:id/addresses', authorize('ADMIN','MANAGER','SALES'), addAddress);
+router.post('/:id/payments', authorize('ADMIN','MANAGER','ACCOUNTANT'), addPayment);
+export default router;

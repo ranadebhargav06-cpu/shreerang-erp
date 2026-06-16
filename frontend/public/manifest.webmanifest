@@ -1,0 +1,12 @@
+{
+  "name": "Shreerang Papad ERP",
+  "short_name": "SP ERP",
+  "description": "Business management software for Shreerang Papad, Mahagaon, Yavatmal.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fff7ed",
+  "theme_color": "#9a3412",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

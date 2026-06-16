@@ -1,0 +1,13 @@
+import { Router } from 'express';
+import { authorize } from '../../middleware/auth.js';
+import { createProduct, deleteProduct, listCategories, listProducts, updateProduct, createCategory, listBatches, createBatch } from './products.controller.js';
+const router = Router();
+router.get('/', listProducts);
+router.post('/', authorize('ADMIN','MANAGER','INVENTORY'), createProduct);
+router.put('/:id', authorize('ADMIN','MANAGER','INVENTORY'), updateProduct);
+router.delete('/:id', authorize('ADMIN'), deleteProduct);
+router.get('/categories/list', listCategories);
+router.post('/categories', authorize('ADMIN','MANAGER'), createCategory);
+router.get('/:productId/batches', listBatches);
+router.post('/:productId/batches', authorize('ADMIN','MANAGER','INVENTORY'), createBatch);
+export default router;

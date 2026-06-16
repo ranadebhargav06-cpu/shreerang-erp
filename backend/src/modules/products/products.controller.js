@@ -1,0 +1,11 @@
+import { prisma } from '../../config/db.js';
+import { asyncHandler } from '../../utils/asyncHandler.js';
+import { created, ok } from '../../utils/apiResponse.js';
+export const listProducts = asyncHandler(async (req,res)=> ok(res, await prisma.product.findMany({ include:{ category:true, batches:true }, orderBy:{ name:'asc' } })));
+export const createProduct = asyncHandler(async (req,res)=> created(res, await prisma.product.create({ data:req.body }), 'Product created'));
+export const updateProduct = asyncHandler(async (req,res)=> ok(res, await prisma.product.update({ where:{ id:req.params.id }, data:req.body }), 'Product updated'));
+export const deleteProduct = asyncHandler(async (req,res)=> ok(res, await prisma.product.update({ where:{ id:req.params.id }, data:{ active:false } }), 'Product deactivated'));
+export const listCategories = asyncHandler(async (req,res)=> ok(res, await prisma.productCategory.findMany({ orderBy:{ name:'asc' } })));
+export const createCategory = asyncHandler(async (req,res)=> created(res, await prisma.productCategory.create({ data:req.body }), 'Category created'));
+export const listBatches = asyncHandler(async (req,res)=> ok(res, await prisma.productBatch.findMany({ where:{ productId:req.params.productId }, orderBy:{ createdAt:'desc' } })));
+export const createBatch = asyncHandler(async (req,res)=> created(res, await prisma.productBatch.create({ data:{ ...req.body, productId:req.params.productId } }), 'Batch created'));

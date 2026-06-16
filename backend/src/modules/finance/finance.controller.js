@@ -1,0 +1,8 @@
+import { prisma } from '../../config/db.js';
+import { asyncHandler } from '../../utils/asyncHandler.js';
+import { created, ok } from '../../utils/apiResponse.js';
+const n=(v)=>Number(v||0);
+export const addExpense = asyncHandler(async (req,res)=> created(res, await prisma.expense.create({ data:req.body }), 'Expense recorded'));
+export const profitLoss = asyncHandler(async (req,res)=>{ const [sales,expenses]=await Promise.all([prisma.sale.findMany(),prisma.expense.findMany()]); const income=sales.reduce((s,x)=>s+n(x.total),0); const expense=expenses.reduce((s,x)=>s+n(x.amount),0); ok(res,{ income, expense, profit: income-expense }); });
+export const cashBook = asyncHandler(async (req,res)=>{ const today=new Date(); today.setHours(0,0,0,0); const [sales,expenses,payments]=await Promise.all([prisma.sale.findMany({where:{saleDate:{gte:today}}}),prisma.expense.findMany({where:{expenseDate:{gte:today}}}),prisma.payment.findMany({where:{paidAt:{gte:today}}})]); ok(res,{ cashIn:sales.reduce((s,x)=>s+n(x.paidAmount),0)+payments.reduce((s,x)=>s+n(x.amount),0), cashOut:expenses.reduce((s,x)=>s+n(x.amount),0), sales, expenses, payments }); });
+export const monthlySummary = asyncHandler(async (req,res)=>{ const start=new Date(new Date().getFullYear(),new Date().getMonth(),1); const [sales,expenses]=await Promise.all([prisma.sale.findMany({where:{saleDate:{gte:start}}}),prisma.expense.findMany({where:{expenseDate:{gte:start}}})]); ok(res,{ income:sales.reduce((s,x)=>s+n(x.total),0), expenses:expenses.reduce((s,x)=>s+n(x.amount),0), saleCount:sales.length, expenseCount:expenses.length }); });

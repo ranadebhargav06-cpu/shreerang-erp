@@ -1,0 +1,3 @@
+import React from 'react';
+import { apiBase } from '../services/api';
+export default function Reports(){ const reports=['Sales report','Product-wise report','Customer-wise report','Inventory report','Profit report']; return <div className="card"><h2>Reports & Exports</h2><p className="muted">All reports are exposed through clean API endpoints and can be exported to CSV/Excel or integrated with PDF generation.</p><div className="module-grid">{reports.map(r=><div className="card" key={r}><h3>{r}</h3><p className="muted">View, print, export and schedule this report.</p></div>)}</div><p><a className="btn" href={`${apiBase}/reports/export.csv`}>Download Sales CSV</a></p></div> }
